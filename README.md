@@ -62,33 +62,37 @@ differently, update `BUCKET` / `FILE` at the top of `api/get-pdf.js`.
 
 Without these, buyers reach `thanks.html` and get no download.
 
-## ⚠️ The buy buttons do not work yet
+## Checkout
 
-`index.html` ships with three **placeholder** hrefs, not real links:
+All three buttons are live Stripe Payment Links on the **K Co LLC | CARES Consulting Inc**
+account (livemode), created 9/6:
 
-```
-STRIPE_LINK_DIGITAL     Digital Edition    $25
-STRIPE_LINK_PRINT       Print Edition      $35
-STRIPE_LINK_DELUXE      The Court Edition  $50
-```
+| Edition | Price | Link | After payment |
+|---|---|---|---|
+| Digital | $25 | `plink_1UCZPIEOQJdY217bLVrWc9ZT` | redirects to `/thanks?session_id=...` → PDF |
+| Print | $35 | `plink_1UCZPWEOQJdY217b6DGveJG7` | Stripe confirmation, points at `/tools` |
+| Court Edition | $50 | `plink_1UCZPhEOQJdY217bshgYmvdf` | Stripe confirmation, points at `/tools` |
 
-Clicking any of them goes nowhere. Replace each with its real Stripe Payment Link
-(or the Amazon URL for print) before the page is promoted anywhere.
+Automatic tax is on for all three. Book tax code `txcd_35010000` on the two physical
+editions, `txcd_10000000` on digital — matching how the ladybug products are set up.
 
-This does **not** block the barcode: `/tools` and the Kingdom Tools workbook work
-regardless, and that is what the printed code points at.
+**Deliberate differences from ladybug**, worth knowing:
 
-**Until the real links are pasted, the page will not 404 a buyer.** A short script
-at the bottom of `index.html` (`orderButtonSafetyNet`) detects any href still set to
-a placeholder and turns that button into a pre-filled email order to
-kari@karikounkel.com naming the edition and price, and rewrites the "Secure checkout
-by Stripe" footnote to match. It only touches buttons whose href is still a
-placeholder, so **pasting a real Payment Link is all that is needed** — the script
-then ignores that button and there is nothing to undo.
+- **Shipping addresses are collected** on Print and Court Edition (US only). Ladybug's
+  physical links collect no address at all. Widen `allowed_countries` if you want to
+  ship outside the US.
+- **Phone number is collected** on both physical editions, for delivery problems.
+- **Court Edition asks "Sign it to (name)"** as an optional field, so you know what to
+  write when you sign it.
+- Only Digital redirects to `/thanks`. The physical editions do not, because `/thanks`
+  hands over the book PDF and they did not buy it.
+
+The `orderButtonSafetyNet` script at the bottom of `index.html` is now dormant — it only
+acts on hrefs that are still placeholders, and none are. Leave it: it is the safety net
+if a link is ever cleared again.
 
 ## Still to wire
 
-- **The three Stripe links above** — the one thing standing between this page and money
 - The `coa-pdf` bucket and the two env vars, so paid downloads deliver
 - Analytics is the shared karikounkel GA4 property (`G-WHKMKCD1SD`); split it out if
   you want this domain tracked separately
