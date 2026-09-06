@@ -1,112 +1,101 @@
 # Court of Accounts
 
-Landing page for *Court of Accounts: A Tale of Ledgers, Loyalty, and Fancy Chickens*
-(Fast Camel Press).
+Landing page for *Court of Accounts: A Tale of Ledgers, Loyalty, and Dressed-Up
+Chickens* (Fast Camel Press), plus **Kingdom Tools**, the companion workbook.
 
-Static site. Built to mirror `kari-kounkel/ladybug` and `kari-kounkel/chickens` —
-plain HTML, no build step, Fraunces + Mulish. Deploys to
-https://accounts.karikounkel.com.
+Static site, no build step. Deploys to https://accounts.karikounkel.com.
 
-## Why this one has a `/tools` page
+## Where this came from
+
+These pages were written in July 2026 and lived at `kkstore/coa/` — reachable at
+`karikounkel.shop/coa/` but never moved onto their own domain. They were always
+*written* for this one: the Open Graph tags and the "Open the Kingdom Tools" band
+both name `accounts.karikounkel.com`. This repo is that move.
+
+## Why `/tools` matters more than anything else here
 
 **The barcode printed inside the book points at `accounts.karikounkel.com/tools`.**
-That is the whole reason this repo exists. Before it, the domain had no DNS record
-at all — it had never resolved for anyone — so every reader who scanned that code
-got nothing.
+Until this repo was deployed that address had no DNS record at all — it had never
+resolved for anyone, so every reader who scanned the code got nothing.
 
-`tools.html` is that page. With `cleanUrls` on (see `vercel.json`) it serves at
-`/tools`, which is the printed address exactly.
+`tools.html` is that page. `cleanUrls` in `vercel.json` serves it at `/tools`,
+which is the printed address exactly.
 
-**Do not rename, move, or delete `tools.html`.** The address is printed in a
-physical book and cannot be changed.
+**Do not rename, move, or delete `tools.html`, and do not remove `cleanUrls`.**
+The address is printed in a physical book and cannot be changed.
+
+## Files
+
+| File | What it is |
+|---|---|
+| `index.html` | The book page — deal-a-courtier, Meet the Court (23 characters), editions, Part One / Part Two |
+| `tools.html` | **Kingdom Tools** — serves at `/tools`. The workbook download and the 20 tools-to-characters map |
+| `Kingdom_Tools.xlsx` | The workbook itself. 21 tabs: Welcome, plus one per character |
+| `thanks.html` | Post-checkout page. Calls `/api/get-pdf` with the Stripe session id |
+| `api/get-pdf.js` | Verifies a paid Stripe Checkout Session, then mints a 7-day signed Supabase Storage URL for the book PDF |
+| `cover.png` | Cover art, also the Open Graph share image |
 
 ## Deploying
 
-Static site, no build step. Same setup as `kari-kounkel/ladybug`:
+Same setup as `kari-kounkel/ladybug` and `kari-kounkel/chickens`:
 
 1. Vercel → New Project → import `kari-kounkel/accounts`
 2. Framework Preset: **Other** — no build command, no output directory
 3. Domains → add `accounts.karikounkel.com`
 4. DNS: one CNAME, `accounts` → `cname.vercel-dns.com`
-   (DNS for karikounkel.com is at DreamHost)
+   (DNS for karikounkel.com is at DreamHost. This is what `chickens.karikounkel.com`
+   uses today; ladybug is still on an older A record — follow chickens.)
 
-## The tools list is live, not copied
+### Environment variables — required, or checkout delivery breaks
 
-`tools.html` reads the catalogue from the **cares-works** Supabase project
-(`qcikhcnclduakriextsz`) at page load, rather than hard-coding 30 tools into
-this file. Publish a tool in CARES Works and it appears here; nothing to
-re-deploy, and the page cannot drift out of date.
+`api/get-pdf.js` needs two env vars set **on this Vercel project**. They are
+per-project and do not carry over from ladybug:
 
-Each tool links to `https://tools.caresmn.com/tools/<slug>`, except the few rows
-that carry their own `href` (for example Steward, at `/steward`).
+| Variable | Value |
+|---|---|
+| `STRIPE_SECRET_KEY` | `sk_live_…` or `rk_live_…` (Checkout Sessions: Read is enough) |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role JWT from the **kkstore** Supabase project |
 
-**Security shape.** The key in `tools.html` is the project's publishable anon key
-— the same one already shipped in the public `tools.caresmn.com` JavaScript
-bundle, so this file exposes nothing that was not already public. RLS is on for
-`public.tools` with exactly one policy: `SELECT` where `is_published = true`.
-There is no insert, update, or delete policy. The key can read published tools
-and can do nothing else.
+It also expects, in the kkstore Supabase project: a **private** Storage bucket
+named `coa-pdf` containing `court-of-accounts.pdf`. If those are named
+differently, update `BUCKET` / `FILE` at the top of `api/get-pdf.js`.
 
-**Not verified from the build sandbox:** the browser-to-Supabase request itself —
-outbound `supabase.co` is blocked here. The render path and the failure path were
-both verified against a stubbed response in headless Chromium. Load `/tools` once
-after the first deploy. If the list does not appear, the likely cause is the key
-format; swapping `SUPABASE_KEY` for the project's current anon JWT is the
-one-line fix.
+Without these, buyers reach `thanks.html` and get no download.
 
-Failure is handled: if the fetch errors or returns nothing, the page shows a
-button through to `tools.caresmn.com/tools` instead of a dead end. A reader
-holding the book should never hit a wall.
+## ⚠️ The buy buttons do not work yet
 
-## Categories
+`index.html` ships with three **placeholder** hrefs, not real links:
 
-`tools.html` orders categories in `CATEGORIES` (bookkeeping first, since that is
-the book's subject). A tool whose category is not in that list still renders,
-under **More tools** — new categories never silently disappear. To promote one,
-add it to the array.
+```
+STRIPE_LINK_DIGITAL     Digital Edition    $25
+STRIPE_LINK_PRINT       Print Edition      $35
+STRIPE_LINK_DELUXE      The Court Edition  $50
+```
 
-## The cover
+Clicking any of them goes nowhere. Replace each with its real Stripe Payment Link
+(or the Amazon URL for print) before the page is promoted anywhere.
 
-`images/cover-front.jpg` is the published cover (600×900), copied from
-`cares-works/public/court-of-accounts-cover.jpg`. It is also the Open Graph
-share image, so whatever replaces it is what shows up when the link is pasted
-anywhere.
-
-## No mailing-list form
-
-Ladybug and chickens each carry a signup form, because both were pre-launch and
-needed a launch-day list. This book is already in print and is serialized to
-CARES Works members, so the list already exists — the membership is the list.
-Adding a second one here would split it. That is a decision, not an oversight.
+This does **not** block the barcode: `/tools` and the Kingdom Tools workbook work
+regardless, and that is what the printed code points at.
 
 ## Still to wire
 
-- **Buy link for the print edition.** The page currently routes readers to the
-  membership (monthly / annual), which is how the book is read online. There is
-  no retail link on the page because none was supplied.
-- **Google Analytics.** Ladybug carries `G-T1PLCXES2Y` and chickens has none.
-  Add a property for this domain if you want it tracked.
-- **Chapters 4–13 and the epilogue.** The docket lists the four titles that
-  exist; the page says "Thirteen chapters and an epilogue in all" without naming
-  the unwritten ones.
+- **The three Stripe links above** — the one thing standing between this page and money
+- The `coa-pdf` bucket and the two env vars, so paid downloads deliver
+- Analytics is the shared karikounkel GA4 property (`G-WHKMKCD1SD`); split it out if
+  you want this domain tracked separately
+- Decide what `karikounkel.shop/coa/` should do now — leaving both live means two
+  copies drifting apart, which is how this page stayed lost for six weeks. A
+  redirect to `accounts.karikounkel.com` is the obvious fix.
+- The Court of Accounts marble on `karikounkel.com` is still `live:false, link:"#"`.
+  Point it here once the domain resolves.
 
-## Facts the page asserts
+## An earlier draft
 
-Everything on the page traces to existing material, not invention:
-
-| Claim | Source |
-|---|---|
-| Title, subtitle, cover | `cares-works/public/court-of-accounts-cover.jpg` |
-| "A business parable set in the Kingdom of Eggerton"; busy vs. profitable; the cost of loyalty; the chickens getting fancy | `cares-works/src/pages/Dashboard.jsx`, Court of Accounts tab |
-| The whimsy warning, verbatim | Same file — the notice above the chapter list |
-| Chapter titles: Prologue (with audio), The Kingdom of Eggerton, Lady Delia and the Court, The Record Keepers | `COURT_CHAPTERS` in the same file |
-| "Thirteen chapters and an epilogue in all" | `COURT_SLUGS` in `cares-works/src/App.jsx` — prologue, chapter-1…13, epilogue |
-| One chapter a month; annual members get the full book on day one | Dashboard copy and the CARES Works landing page |
-| $27/month, $270/year, and both Stripe links | `cares-works/src/pages/Landing.jsx` |
-| "Where your books face the judge" | The Court of Accounts marble description in `kari-kounkel/karikounkel`'s `marbles.js` |
-| "Revenue is vanity. Net profit is sanity." | The vanity callout on the CARES Works landing page |
-| Rust `#B5651D` in the palette | The colour already assigned to this book's marble in `marbles.js` |
-
-The Eggerton framing in "A tiny kingdom, and a very large problem" is written
-from the premise above; it does not name characters or events beyond the four
-published chapter titles.
+`claude/parchment-draft` holds a different take on this site, written before these
+pages were found — parchment and court navy, with a `/tools` that indexed the CARES
+Works business-tool library instead of the workbook. Kept for reference only.
+**It carries wrong facts** (the subtitle as "Fancy Chickens", the older cover, and
+membership pricing rather than the $25/$35/$50 editions), so do not merge it. Its
+one idea worth stealing is a link between this book and the CARES Works tool
+library, which nothing currently connects.
