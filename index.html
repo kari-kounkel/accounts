@@ -360,5 +360,51 @@ setInterval(function(){
   ri=(ri+1)%bs.length; bs[ri].classList.add('on');
 }, 2600);
 </script>
+<script>
+/* Order-button safety net.
+   The three order buttons ship with placeholder hrefs (STRIPE_LINK_DIGITAL /
+   _DELUXE / _PRINT). Left alone, a buyer clicking "Buy the PDF" navigates to
+   /STRIPE_LINK_DIGITAL and gets a 404 — the worst possible outcome on the one
+   part of the page that makes money.
+
+   Until the real Stripe Payment Links are pasted in, this turns each unset
+   button into a working email order instead: same button, honest label, and
+   Kari still gets the sale. It is inert the moment a real href replaces the
+   placeholder, so there is nothing to remove later — just paste the links. */
+(function orderButtonSafetyNet(){
+  var EMAIL = 'kari@karikounkel.com';
+  var EDITIONS = {
+    STRIPE_LINK_DIGITAL: { name: 'Digital Edition', price: '$25' },
+    STRIPE_LINK_DELUXE:  { name: 'The Court Edition', price: '$50' },
+    STRIPE_LINK_PRINT:   { name: 'Print Edition', price: '$35' }
+  };
+  var unset = 0;
+
+  document.querySelectorAll('a.btn[href]').forEach(function(a){
+    var raw = a.getAttribute('href') || '';
+    var ed = EDITIONS[raw];
+    if (!ed) return;                       // a real link is in place — leave it alone
+    unset++;
+    var subject = 'Court of Accounts — ' + ed.name + ' (' + ed.price + ')';
+    var body = "Hi Kari,\n\nI'd like to order the " + ed.name + ' (' + ed.price
+             + ") of Court of Accounts.\n\nName:\nShipping address (if a physical copy):\n\nThank you!";
+    a.setAttribute('href', 'mailto:' + EMAIL
+      + '?subject=' + encodeURIComponent(subject)
+      + '&body=' + encodeURIComponent(body));
+    a.textContent = 'Order by email →';
+    a.setAttribute('data-checkout', 'pending');
+  });
+
+  if (!unset) return;
+
+  // The footnote promises Stripe checkout. While the buttons are email, say so.
+  var note = document.querySelector('.onote');
+  if (note) {
+    note.innerHTML = '✉️ Online checkout is being set up. Email an order and Kari will '
+      + 'send it straight back. The bookmark &amp; surprises come only with '
+      + '<strong>The Court Edition</strong>.';
+  }
+})();
+</script>
 </body>
 </html>

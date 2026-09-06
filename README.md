@@ -78,6 +78,14 @@ Clicking any of them goes nowhere. Replace each with its real Stripe Payment Lin
 This does **not** block the barcode: `/tools` and the Kingdom Tools workbook work
 regardless, and that is what the printed code points at.
 
+**Until the real links are pasted, the page will not 404 a buyer.** A short script
+at the bottom of `index.html` (`orderButtonSafetyNet`) detects any href still set to
+a placeholder and turns that button into a pre-filled email order to
+kari@karikounkel.com naming the edition and price, and rewrites the "Secure checkout
+by Stripe" footnote to match. It only touches buttons whose href is still a
+placeholder, so **pasting a real Payment Link is all that is needed** — the script
+then ignores that button and there is nothing to undo.
+
 ## Still to wire
 
 - **The three Stripe links above** — the one thing standing between this page and money
