@@ -1,0 +1,7 @@
+{
+  "name": "accounts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Landing page for Court of Accounts: A Tale of Ledgers, Loyalty, and Fancy Chickens (Fast Camel Press)",
+  "type": "module"
+}
